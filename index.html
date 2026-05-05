@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Mon Budget"/>
+<title>Mon Budget</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#ffffff;--card:#f5f5f5;--border:#e0e0e0;
+  --text:#111111;--muted:#888888;--black:#111111;--red:#e53e3e;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;display:flex;flex-direction:column}
+
+/* NAV */
+.nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  background:rgba(255,255,255,.97);border-top:1px solid var(--border);
+  display:flex;padding:10px 0 calc(10px + env(safe-area-inset-bottom,0px));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+}
+.nav-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  background:none;border:none;color:var(--muted);cursor:pointer;
+  font-family:'Nunito',sans-serif;font-size:9px;font-weight:700;
+  letter-spacing:.4px;text-transform:uppercase;transition:color .2s;padding:4px 0;
+}
+.nav-btn.active{color:var(--black)}
+.nav-icon{font-size:19px;line-height:1}
+
+/* PAGES */
+.pages{flex:1;overflow:hidden;position:relative;z-index:1}
+.page{
+  position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:24px 16px calc(95px + env(safe-area-inset-bottom,0px));
+  padding-top:calc(20px + env(safe-area-inset-top,0px));display:none;
+}
+.page.active{display:block}
+
+/* TYPOGRAPHY */
+.page-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;margin-bottom:4px;line-height:1.1}
+.page-sub{font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:20px}
+
+/* MONTH BAR */
+.month-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;padding:12px 16px;margin-bottom:16px;
+}
+.month-label{font-weight:800;font-size:16px}
+.month-btn{background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;padding:2px 8px;line-height:1}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:16px;margin-bottom:12px}
+.card-title{font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;color:var(--muted)}
+
+/* INPUTS */
+.input-row{display:flex;gap:8px;margin-bottom:8px}
+.inp{
+  flex:1;background:#fff;border:1px solid var(--border);
+  border-radius:12px;padding:11px 14px;color:var(--text);
+  font-family:'Nunito',sans-serif;font-size:14px;outline:none;transition:border-color .2s;
+}
+.inp:focus{border-color:#aaa}
+.inp::placeholder{color:var(--muted)}
+.btn{
+  padding:11px 16px;border-radius:12px;border:none;cursor:pointer;
+  font-family:'Nunito',sans-serif;font-weight:800;font-size:13px;
+  transition:opacity .2s,transform .1s;white-space:nowrap;background:var(--black);color:#fff;
+}
+.btn:active{opacity:.75;transform:scale(.97)}
+
+/* LIST ITEMS */
+.list-item{
+  display:flex;align-items:center;padding:11px 0;
+  border-bottom:1px solid var(--border);gap:10px;
+}
+.list-item:last-child{border-bottom:none;padding-bottom:0}
+.li-main{flex:1;min-width:0}
+.li-label{font-size:14px;font-weight:600}
+.li-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.li-amount{font-weight:800;font-size:15px}
+.li-del{background:none;border:none;color:#ccc;font-size:20px;cursor:pointer;padding:0 2px;line-height:1}
+.li-del:active{color:var(--red)}
+
+/* TOGGLE */
+.toggle{
+  display:flex;align-items:center;cursor:pointer;
+  background:#e0e0e0;border-radius:99px;
+  width:52px;height:28px;position:relative;
+  transition:background .25s;flex-shrink:0;
+}
+.toggle.on{background:var(--black)}
+.toggle-knob{
+  width:22px;height:22px;border-radius:50%;background:#fff;
+  position:absolute;left:3px;transition:left .25s;
+  display:flex;align-items:center;justify-content:center;font-size:11px;
+  box-shadow:0 1px 3px rgba(0,0,0,.2);
+}
+.toggle.on .toggle-knob{left:27px}
+
+/* BADGE */
+.badge{font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3px 8px;border-radius:99px}
+.badge-pending{background:#ebebeb;color:var(--muted)}
+.badge-done{background:var(--black);color:#fff}
+
+/* TOTALS STRIP */
+.totals-strip{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.tot-cell{text-align:center}
+.tot-label{font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.tot-value{font-family:'Playfair Display',serif;font-size:17px;font-weight:700}
+
+/* PROGRESS BAR */
+.prog-bar{height:5px;background:#e8e8e8;border-radius:99px;overflow:hidden;margin:10px 0 4px}
+.prog-fill{height:100%;border-radius:99px;background:var(--black);transition:width .5s ease}
+.prog-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+
+/* ÉPARGNE */
+.epargne-card{background:var(--black);border-radius:24px;padding:22px;margin-bottom:12px;text-align:center}
+.epargne-label{font-size:10px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:8px}
+.epargne-value{font-family:'Playfair Display',serif;font-size:44px;font-weight:700;color:#fff}
+.epargne-sub{font-size:12px;color:rgba(255,255,255,.5);margin-top:6px}
+
+/* SUMMARY GRID */
+.sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.sum-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:14px}
+.sum-card.full{grid-column:1/-1}
+.sum-slabel{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.sum-val{font-family:'Playfair Display',serif;font-size:22px;font-weight:700}
+.sum-sub{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* WEEK TABS */
+.week-tabs{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px}
+.week-tab{
+  padding:7px 16px;border-radius:99px;border:1.5px solid var(--border);cursor:pointer;
+  font-family:'Nunito',sans-serif;font-weight:700;font-size:12px;
+  background:#fff;color:var(--muted);white-space:nowrap;transition:all .2s;flex-shrink:0;
+}
+.week-tab.active{background:var(--black);color:#fff;border-color:transparent}
+
+/* EDIT INPUT inline */
+.edit-inp{
+  background:#fff;border:1.5px solid var(--border);border-radius:8px;
+  padding:4px 8px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;
+  color:var(--text);outline:none;width:88px;
+}
+.edit-inp:focus{border-color:#999}
+
+.empty{text-align:center;color:var(--muted);padding:20px 0;font-size:13px}
+
+/* INSTALL BANNER */
+.install-banner{
+  position:fixed;bottom:0;left:0;right:0;z-index:200;
+  background:rgba(255,255,255,.97);border-top:1px solid var(--border);
+  padding:14px 20px calc(14px + env(safe-area-inset-bottom,0px));
+  text-align:center;font-size:13px;color:var(--muted);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:none;
+}
+.install-banner.visible{display:block}
+.install-banner strong{color:var(--black)}
+.banner-close{position:absolute;top:12px;right:16px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.animate{animation:fadeUp .3s ease both}
+</style>
+</head>
+<body>
+<div class="pages">
+
+<!-- ══ RÉCAP ══ -->
+<div class="page active" id="page-recap">
+  <div class="page-sub">Vue d'ensemble</div>
+  <div class="page-title">Récapitulatif</div>
+  <div class="month-bar animate">
+    <button class="month-btn" onclick="changeMonth(-1)">‹</button>
+    <span class="month-label" id="recap-title">—</span>
+    <button class="month-btn" onclick="changeMonth(1)">›</button>
+  </div>
+  <div class="epargne-card animate">
+    <div class="epargne-label">💰 Capacité d'épargne</div>
+    <div class="epargne-value" id="recap-epargne">—</div>
+    <div class="epargne-sub" id="recap-epargne-sub"></div>
+  </div>
+  <div class="card animate">
+    <div class="card-title">Suivi des prélèvements</div>
+    <div class="totals-strip" style="margin-top:0;padding-top:0;border-top:none">
+      <div class="tot-cell"><div class="tot-label">Total dép.</div><div class="tot-value" id="recap-total-dep">—</div></div>
+      <div class="tot-cell"><div class="tot-label">✅ Prélevé</div><div class="tot-value" id="recap-preleve">—</div></div>
+      <div class="tot-cell"><div class="tot-label">⏳ À venir</div><div class="tot-value" id="recap-avenir">—</div></div>
+    </div>
+  </div>
+  <div class="sum-grid animate">
+    <div class="sum-card">
+      <div class="sum-slabel">📈 Revenus</div>
+      <div class="sum-val" id="recap-revenus">—</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-slabel">🏠 Frais fixes</div>
+      <div class="sum-val" id="recap-fixes">—</div>
+      <div class="sum-sub" id="recap-fixes-sub"></div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-slabel">🛒 Courses</div>
+      <div class="sum-val" id="recap-courses">—</div>
+      <div class="prog-bar"><div class="prog-fill" id="recap-courses-bar" style="width:0%"></div></div>
+      <div class="prog-labels"><span id="recap-courses-dep">0 €</span><span id="recap-courses-bud">/ —</span></div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-slabel">⛽ Essence</div>
+      <div class="sum-val" id="recap-essence">—</div>
+      <div class="prog-bar"><div class="prog-fill" id="recap-essence-bar" style="width:0%"></div></div>
+      <div class="prog-labels"><span id="recap-essence-dep">0 €</span><span id="recap-essence-bud">/ —</span></div>
+    </div>
+    <div class="sum-card full">
+      <div class="sum-slabel">⚡ Imprévus</div>
+      <div class="sum-val" id="recap-imprevus">—</div>
+      <div class="sum-sub" id="recap-imprevus-sub"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ REVENUS ══ -->
+<div class="page" id="page-revenus">
+  <div class="page-sub">Finances</div>
+  <div class="page-title">Revenus</div>
+  <div class="month-bar animate">
+    <button class="month-btn" onclick="changeMonth(-1)">‹</button>
+    <span class="month-label" id="rev-month-label"></span>
+    <button class="month-btn" onclick="changeMonth(1)">›</button>
+  </div>
+  <div class="card animate">
+    <div class="card-title">➕ Ajouter un revenu</div>
+    <div class="input-row"><input class="inp" id="rev-label" placeholder="Ex : Salaire, Prime…"/></div>
+    <div class="input-row">
+      <input class="inp" id="rev-amount" type="number" placeholder="Montant (€)"/>
+      <button class="btn" onclick="addRevenu()">Ajouter</button>
+    </div>
+  </div>
+  <div class="card animate">
+    <div class="card-title">📋 Liste <span style="font-weight:400;color:var(--muted);font-size:9px">(reporté & modifiable chaque mois)</span></div>
+    <div id="rev-list"><div class="empty">Aucun revenu ce mois</div></div>
+    <div class="totals-strip">
+      <div class="tot-cell"><div class="tot-label">Total</div><div class="tot-value" id="rev-total">—</div></div>
+      <div class="tot-cell"><div class="tot-label">✅ Reçu</div><div class="tot-value" id="rev-preleve">—</div></div>
+      <div class="tot-cell"><div class="tot-label">⏳ À venir</div><div class="tot-value" id="rev-avenir">—</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FRAIS FIXES ══ -->
+<div class="page" id="page-fixes">
+  <div class="page-sub">Finances</div>
+  <div class="page-title">Frais Fixes</div>
+  <div class="month-bar animate">
+    <button class="month-btn" onclick="changeMonth(-1)">‹</button>
+    <span class="month-label" id="fix-month-label"></span>
+    <button class="month-btn" onclick="changeMonth(1)">›</button>
+  </div>
+  <div class="card animate">
+    <div class="card-title">➕ Ajouter un frais fixe</div>
+    <div class="input-row"><input class="inp" id="fix-label" placeholder="Ex : Loyer, EDF, Netflix…"/></div>
+    <div class="input-row">
+      <input class="inp" id="fix-amount" type="number" placeholder="Montant (€)"/>
+      <button class="btn" onclick="addFix()">Ajouter</button>
+    </div>
+  </div>
+  <div class="card animate">
+    <div class="card-title">📋 Liste <span style="font-weight:400;color:var(--muted);font-size:9px">(reporté & modifiable chaque mois)</span></div>
+    <div id="fix-list"><div class="empty">Aucun frais fixe ce mois</div></div>
+    <div class="totals-strip">
+      <div class="tot-cell"><div class="tot-label">Total</div><div class="tot-value" id="fix-total">—</div></div>
+      <div class="tot-cell"><div class="tot-label">✅ Prélevé</div><div class="tot-value" id="fix-preleve">—</div></div>
+      <div class="tot-cell"><div class="tot-label">⏳ À venir</div><div class="tot-value" id="fix-avenir">—</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ COURSES ══ -->
+<div class="page" id="page-courses">
+  <div class="page-sub">Budget</div>
+  <div class="page-title">Courses 🛒</div>
+  <div class="month-bar animate">
+    <button class="month-btn" onclick="changeMonth(-1)">‹</button>
+    <span class="month-label" id="courses-month-label"></span>
+    <button class="month-btn" onclick="changeMonth(1)">›</button>
+  </div>
+  <div class="card animate">
+    <div class="card-title">🎯 Budget mensuel courses</div>
+    <div class="input-row">
+      <input class="inp" id="courses-budget" type="number" placeholder="Ex : 400"/>
+      <button class="btn" onclick="setCoursesBudget()">Définir</button>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:4px">
+      <span style="font-size:13px;color:var(--muted)">Budget mensuel :</span>
+      <span style="font-weight:800" id="courses-budget-display">—</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:6px">
+      <span style="font-size:13px;color:var(--muted)">Budget / semaine :</span>
+      <span style="font-weight:800" id="courses-budget-week">—</span>
+    </div>
+  </div>
+  <div class="week-tabs animate">
+    <button class="week-tab active" onclick="selectCourseWeek(1,this)">Sem. 1</button>
+    <button class="week-tab" onclick="selectCourseWeek(2,this)">Sem. 2</button>
+    <button class="week-tab" onclick="selectCourseWeek(3,this)">Sem. 3</button>
+    <button class="week-tab" onclick="selectCourseWeek(4,this)">Sem. 4</button>
+  </div>
+  <div class="card animate">
+    <div class="card-title" id="courses-add-title">➕ Ajouter — Semaine 1</div>
+    <div class="input-row"><input class="inp" id="courses-label" placeholder="Ex : Carrefour, Lidl…"/></div>
+    <div class="input-row">
+      <input class="inp" id="courses-amount" type="number" placeholder="Montant (€)"/>
+      <button class="btn" onclick="addCourse()">Ajouter</button>
+    </div>
+  </div>
+  <div class="card animate">
+    <div class="card-title" id="courses-list-title">📋 Semaine 1</div>
+    <div id="courses-list"><div class="empty">Aucune dépense</div></div>
+    <div class="totals-strip">
+      <div class="tot-cell"><div class="tot-label">Cette sem.</div><div class="tot-value" id="courses-week-total">—</div></div>
+      <div class="tot-cell"><div class="tot-label">✅ Prélevé</div><div class="tot-value" id="courses-preleve">—</div></div>
+      <div class="tot-cell"><div class="tot-label">⏳ À venir</div><div class="tot-value" id="courses-avenir">—</div></div>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="courses-prog" style="width:0%"></div></div>
+    <div class="prog-labels"><span id="courses-prog-dep">0 €</span><span id="courses-prog-bud">/ —</span></div>
+  </div>
+</div>
+
+<!-- ══ ESSENCE ══ -->
+<div class="page" id="page-essence">
+  <div class="page-sub">Budget</div>
+  <div class="page-title">Essence ⛽</div>
+  <div class="month-bar animate">
+    <button class="month-btn" onclick="changeMonth(-1)">‹</button>
+    <span class="month-label" id="essence-month-label"></span>
+    <button class="month-btn" onclick="changeMonth(1)">›</button>
+  </div>
+  <div class="card animate">
+    <div class="card-title">🎯 Budget mensuel essence</div>
+    <div class="input-row">
+      <input class="inp" id="essence-budget" type="number" placeholder="Ex : 150"/>
+      <button class="btn" onclick="setEssenceBudget()">Définir</button>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:4px">
+      <span style="font-size:13px;color:var(--muted)">Budget défini :</span>
+      <span style="font-weight:800" id="essence-budget-display">—</span>
+    </div>
+  </div>
+  <div class="card animate">
+    <div class="card-title">➕ Ajouter une dépense</div>
+    <div class="input-row"><input class="inp" id="essence-label" placeholder="Ex : Total, BP…"/></div>
+    <div class="input-row">
+      <input class="inp" id="essence-amount" type="number" placeholder="Montant (€)"/>
+      <button class="btn" onclick="addEssence()">Ajouter</button>
+    </div>
+  </div>
+  <div class="card animate">
+    <div class="card-title">📋 Dépenses</div>
+    <div id="essence-list"><div class="empty">Aucune dépense ce mois</div></div>
+    <div class="totals-strip">
+      <div class="tot-cell"><div class="tot-label">Total</div><div class="tot-value" id="essence-total">—</div></div>
+      <div class="tot-cell"><div class="tot-label">✅ Prélevé</div><div class="tot-value" id="essence-preleve">—</div></div>
+      <div class="tot-cell"><div class="tot-label">⏳ À venir</div><div class="tot-value" id="essence-avenir">—</div></div>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="essence-prog" style="width:0%"></div></div>
+    <div class="prog-labels"><span id="essence-prog-dep">0 €</span><span id="essence-prog-bud">/ —</span></div>
+  </div>
+</div>
+
+<!-- ══ IMPRÉVUS ══ -->
+<div class="page" id="page-imprevus">
+  <div class="page-sub">Dépenses</div>
+  <div class="page-title">Imprévus ⚡</div>
+  <div class="month-bar animate">
+    <button class="month-btn" onclick="changeMonth(-1)">‹</button>
+    <span class="month-label" id="imp-month-label"></span>
+    <button class="month-btn" onclick="changeMonth(1)">›</button>
+  </div>
+  <div class="card animate">
+    <div class="card-title">➕ Ajouter un imprévu</div>
+    <div class="input-row"><input class="inp" id="imp-label" placeholder="Ex : Voiture, Médecin…"/></div>
+    <div class="input-row">
+      <input class="inp" id="imp-amount" type="number" placeholder="Montant (€)"/>
+      <button class="btn" onclick="addImprev()">Ajouter</button>
+    </div>
+  </div>
+  <div class="card animate">
+    <div class="card-title">📋 Liste</div>
+    <div id="imp-list"><div class="empty">Aucun imprévu ce mois</div></div>
+    <div class="totals-strip">
+      <div class="tot-cell"><div class="tot-label">Total</div><div class="tot-value" id="imp-total">—</div></div>
+      <div class="tot-cell"><div class="tot-label">✅ Prélevé</div><div class="tot-value" id="imp-preleve">—</div></div>
+      <div class="tot-cell"><div class="tot-label">⏳ À venir</div><div class="tot-value" id="imp-avenir">—</div></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /pages -->
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="goPage('recap',this)"><span class="nav-icon">📊</span>Récap</button>
+  <button class="nav-btn" onclick="goPage('revenus',this)"><span class="nav-icon">📈</span>Revenus</button>
+  <button class="nav-btn" onclick="goPage('fixes',this)"><span class="nav-icon">🏠</span>Fixes</button>
+  <button class="nav-btn" onclick="goPage('courses',this)"><span class="nav-icon">🛒</span>Courses</button>
+  <button class="nav-btn" onclick="goPage('essence',this)"><span class="nav-icon">⛽</span>Essence</button>
+  <button class="nav-btn" onclick="goPage('imprevus',this)"><span class="nav-icon">⚡</span>Imprévus</button>
+</nav>
+
+<div class="install-banner" id="install-banner">
+  <button class="banner-close" onclick="closeBanner()">×</button>
+  Installe cette app : <strong>Partager</strong> → <strong>"Sur l'écran d'accueil"</strong> 📲
+</div>
+
+<script>
+const MONTHS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+let now=new Date(), currentYear=now.getFullYear(), currentMonth=now.getMonth();
+let selectedCourseWeek=1;
+
+function fmt(n){return n.toFixed(2).replace('.',',')+' €'}
+function fmtS(n){return fmt(n||0)}
+function sumArr(arr){return arr.reduce((a,b)=>a+(b.amount||0),0)}
+function sumPaid(arr){return arr.filter(x=>x.paid).reduce((a,b)=>a+b.amount,0)}
+function sumPending(arr){return arr.filter(x=>!x.paid).reduce((a,b)=>a+b.amount,0)}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function monthLabel(){return `${MONTHS[currentMonth]} ${currentYear}`}
+function monthKey(y,m){return `${y}-${String(m+1).padStart(2,'0')}`}
+
+function loadAll(){try{return JSON.parse(localStorage.getItem('budget3')||'{}')}catch(e){return{}}}
+function saveAll(d){localStorage.setItem('budget3',JSON.stringify(d))}
+
+function emptyMonth(){
+  return{revenus:[],fixes:[],courses:{budget:0,items:[]},essence:{budget:0,items:[]},imprevus:[]};
+}
+
+function getMonth(y,m){
+  const d=loadAll(), k=monthKey(y,m);
+  if(!d[k]){
+    let pm=m-1,py=y; if(pm<0){pm=11;py--;}
+    const prev=d[monthKey(py,pm)];
+    d[k]=emptyMonth();
+    if(prev){
+      // carry revenus & fixes with paid reset
+      d[k].revenus=prev.revenus.map(r=>({...r,id:r.id,paid:false}));
+      d[k].fixes=prev.fixes.map(f=>({...f,id:f.id,paid:false}));
+      // carry budgets
+      d[k].courses.budget=prev.courses.budget||0;
+      d[k].essence.budget=prev.essence.budget||0;
+    }
+    saveAll(d);
+  }
+  return{data:d,month:d[k],key:k};
+}
+function saveMonth(data,key,month){data[key]=month;saveAll(data);}
+
+function goPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+  renderAll();
+}
+function changeMonth(dir){
+  currentMonth+=dir;
+  if(currentMonth>11){currentMonth=0;currentYear++;}
+  if(currentMonth<0){currentMonth=11;currentYear--;}
+  renderAll();
+}
+
+function toggleHtml(paid,fn){
+  return `<div class="toggle ${paid?'on':''}" onclick="${fn}" title="${paid?'Prélevé':'À venir'}">
+    <div class="toggle-knob">${paid?'✅':'⏳'}</div></div>`;
+}
+
+function renderTotals(ids,items){
+  document.getElementById(ids[0]).textContent=fmtS(sumArr(items));
+  document.getElementById(ids[1]).textContent=fmtS(sumPaid(items));
+  document.getElementById(ids[2]).textContent=fmtS(sumPending(items));
+}
+
+function progressBar(id,dep,bud){
+  const el=document.getElementById(id); if(!el)return;
+  const pct=bud?Math.min(100,Math.round(dep/bud*100)):0;
+  el.style.width=pct+'%';
+  el.style.background=pct>90?'#e53e3e':'#111';
+}
+
+// ── REVENUS ──
+function addRevenu(){
+  const label=document.getElementById('rev-label').value.trim();
+  const amount=parseFloat(document.getElementById('rev-amount').value);
+  if(!label||isNaN(amount)||amount<=0)return;
+  const {data,month,key}=getMonth(currentYear,currentMonth);
+  month.revenus.push({id:Date.now(),label,amount,paid:false});
+  saveMonth(data,key,month);
+  document.getElementById('rev-label').value='';
+  document.getElementById('rev-amount').value='';
+  renderAll();
+}
+function toggleRevenu(id){
+  const {data,month,key}=getMonth(currentYear,currentMonth);
+  const it=month.revenus.find(x=>x.id===id); if(it)it.paid=!it.paid;
+  saveMonth(data,key,month);renderAll();
+}
+function deleteRevenu(id){
+  const {data,month,key}=getMonth(currentYear,currentMonth);
+  month.revenus=month.revenus.filter(x=>x.id!==id);
+  saveMonth(data,key,month);renderAll();
+}
+function editRevenu(id,field,val){
+  const {data,month,key}=getMonth(currentYear,currentMonth);
+  const it=month.revenus.find(x=>x.id===id); if(!it)return;
+  if(field==='amount'){const v=parseFloat(val);if(!isNaN(v)&&v>0)it.amount=v;}
+  else it.label=val.trim()||it.label;
+  saveMonth(data,key,month);renderAll();
+}
+function renderRevenus(){
+  const {month}=getMonth(currentYear,currentMonth);
+  document.getElementById('rev-month-label').textContent=monthLabel();
+  const el=document.getElementById('rev-list');
+  el.innerHTML=!month.revenus.length?'<div class="empty">Aucun revenu ce mois</div>':
+    month.revenus.map(it=>`
+    <div class="list-item">
+      <div class="li-main">
+        <div class="li-label" contenteditable="true" onblur="editRevenu(${it.id},'label',this.textContent)">${esc(it.label)}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:5px">
+          <input class="edit-inp" type="number" value="${it.amount}" onchange="editRevenu(${it.id},'amount',this.value)"/>
+          <span class="badge ${it.paid?'badge-done':'badge-pending'}">${it.paid?'Reçu':'À venir'}</span>
+        </div>
+      </div>
+      <div class="li-right">
+        ${toggleHtml(it.paid,`toggleRevenu(${it.id})`)}
+        <button class="li-del" onclick="deleteRevenu(${it.id})">×</button>
+      </div>
+    </div>`).join('');
+  renderTotals(['rev-total','rev-preleve','rev-avenir'],month.revenus);
+}
+
+// ── FRAIS FIXES ──
+function addFix(){
+  const label=document.getElementById('fix-label').value.trim();
+  const amount=parseFloat(document.getElementById('fix-amount').value);
+  if(!label||isNaN(amount)||amount<=0)return;
+  const {data,month,key}=getMonth(currentYear,currentMonth);
+  month.fixes.push({id:Date.now(),label,amount,paid:false});
+  saveMonth(data,key,month);
+  document.getElementById('fix-label').value='';
+  document.getElementById('fix-amount').value='';
+  renderAll();
+}
+function toggleFix(id){
+  const {data,month,key}=getMonth(currentYear,currentMonth);
+  const it=month.fixes.find(x=>x.id===id); if(it)it.paid=!it.paid;
+  saveMonth(data,key,month);renderAll();
+}
+function deleteFix(id){
+  const {data,month,key}=getMonth(currentYear,currentMonth);
+  month.fixes=month.fixes.filter(x=>x.id!==id);
+  saveMonth(data,key,month);renderAll();
+}
+function editFix(id,field,val){
+  const {data,month,key}=getMonth(currentYear,currentMonth);
+  const it=month.fixes.find(x=>x.id===id); if(!it)return;
+  if(field==='amount'){const v=parseFloat(val);if(!isNaN(v)&&v>0)it.amount=v;}
+  else it.label=val.trim()||it.label;
+  saveMonth(data,key,month);renderAll();
+}
+function renderFixes(){
+  const {month}=getMonth(currentYear,currentMonth);
+  document.getElementById('fix-month-label').textContent=monthLabel();
+  const el=document.getElementById('fix-list');
+  el.innerHTML=!month.fixes.length?'<div class="empty">Aucun frais fixe ce mois</div>':
+    month.fixes.map(it=>`
+    <div class="list-item">
+      <div class="li-main">
+        <div class="li-label" contenteditable="true" onblur="editFix(${it.id},'label',this.textContent)">${esc(it.label)}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:5px">
+          <input class="edit-inp" type="number" value="${it.amount}" onchange="editFix(${it.id},'amount',this.value)"/>
+          <span class="badge ${it.paid?'badge-done':'badge-pending'}">${it.paid?'Prélevé':'À venir'}</span>
+        </div>
+      </div>
+      <div class="li-right">
+        ${toggleHtml(it.paid,`toggleFix(${it.id})`)}
+        <button class="li-del" onclick="deleteFix(${it.id})">×</button>
+      </div>
+    </div>`).join('');
+  renderTotals(['fix-total','fix-preleve','fix-avenir'],month.fixes);
+}
+
+// ── COURSES ──
+function setCoursesBudget(){
+  const v=parseFloat(document.getElementById('courses-budget').value);
+  if(isNaN(v)||v<=0)return;
+  const {data,month,key}=getMonth(currentYear,currentMonth);
+  month.courses.budget=v; saveMonth(data,key,month);
+  document.getElementById('courses-budget').value=''; renderAll();
+}
+function selectCourseWeek(w,btn){
+  selectedCourseWeek=w;
+  document.querySelectorAll('.week-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); renderCourses();
+}
+function addCourse(){
+  const label=document.getElementById('courses-label').value.trim();
+  const amount=parseFloat(document.getElementById('courses-amount').value);
+  if(!label||isNaN(amount)||amount<=0)return;
+  const {data,month,key}=getMonth(currentYear,currentMonth);
+  month.courses.items.push({id:Date.now(),label,amount,week:selectedCourseWeek,paid:false});
+  saveMonth(data,key,month);
+  document.getElementById('courses-label').value='';
+  document.getElementById('courses-amount').value=''; renderAll();
+}
+function toggleCourse(id){
+  const {data,month,key}=getMonth(currentYear,currentMonth);
+  const it=month.courses.items.find(x=>x.id===id); if(it)it.paid=!it.paid;
+  saveMonth(data,key,month);renderAll();
+}
+function deleteCourse(id){
+  const {data,month,key}=getMonth(currentYear,currentMonth);
+  month.courses.items=month.courses.items.filter(x=>x.id!==id);
+  saveMonth(data,key,month);renderAll();
+}
+function renderCourses(){
+  const {month}=getMonth(currentYear,currentMonth);
+  document.getElementById('courses-month-label').textContent=monthLabel();
+  const bud=month.courses.budget||0;
+  document.getElementById('courses-budget-display').textContent=bud?fmt(bud):'—';
+  document.getElementById('courses-budget-week').textContent=bud?fmt(bud/4):'—';
+  document.getElementById('courses-add-title').textContent=`➕ Ajouter — Semaine ${selectedCourseWeek}`;
+  document.getElementById('courses-list-title').textContent=`📋 Semaine ${selectedCourseWeek}`;
+  const weekItems=month.courses.items.filter(x=>x.week===selectedCourseWeek);
+  const allItems=month.courses.items;
+  const el=document.getElementById('courses-list');
+  el.innerHTML=!weekItems.length?'<div class="empty">Aucune dépense cette semaine</div>':
+    weekItems.map(it=>`
+    <div class="list-item">
+      <div class="li-main">
+        <div class="li-label">${esc(it.label)}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:3px">
+          <span class="li-amount">${fmt(it.amount)}</span>
+          <span class="badge ${it.paid?'badge-done':'badge-pending'}">${it.paid?'Prélevé':'À venir'}</span>
+        </div>
+      </div>
+      <div class="li-right">
+        ${toggleHtml(it.paid,`toggleCourse(${it.id})`)}
+        <button class="li-del" onclick="deleteCourse(${it.id})">×</button>
+      </div>
+    </div>`).join('');
+  document.getElementById('courses-week-total').textContent=fmtS(sumArr(weekItems));
+  document.getElementById('courses-preleve').textContent=fmtS(sumPaid(allItems));
+  document.getElementById('courses-avenir').textContent=fmtS(sumPending(allItems));
+  const totalAll=sumArr(allItems);
+  progressBar('courses-prog',totalAll,bud);
+  document.getElementById('courses-prog-dep').textContent=fmtS(totalAll);
+  document.getElementById('courses-prog-bud').textContent='/ '+(bud?fmt(bud):'—');
+}
+
+// ── ESSENCE ──
+function setEssenceBudget(){
+  const v=parseFloat(document.getElementById('essence-budget').value);
+  if(isNaN(v)||v<=0)return;
+  const {data,month,key}=getMonth(currentYear,currentMonth);
+  month.essence.budget=v; saveMonth(data,key,month);
+  document.getElementById('essence-budget').value=''; renderAll();
+}
+function addEssence(){
+  const label=document.getElementById('essence-label').value.trim();
+  const amount=parseFloat(document.getElementById('essence-amount').value);
+  if(!label||isNaN(amount)||amount<=0)return;
+  const {data,month,key}=getMonth(currentYear,currentMonth);
+  month.essence.items.push({id:Date.now(),label,amount,paid:false});
+  saveMonth(data,key,month);
+  document.getElementById('essence-label').value='';
+  document.getElementById('essence-amount').value=''; renderAll();
+}
+function toggleEssence(id){
+  const {data,month,key}=getMonth(currentYear,currentMonth);
+  const it=month.essence.items.find(x=>x.id===id); if(it)it.paid=!it.paid;
+  saveMonth(data,key,month);renderAll();
+}
+function deleteEssence(id){
+  const {data,month,key}=getMonth(currentYear,currentMonth);
+  month.essence.items=month.essence.items.filter(x=>x.id!==id);
+  saveMonth(data,key,month);renderAll();
+}
+function renderEssence(){
+  const {month}=getMonth(currentYear,currentMonth);
+  document.getElementById('essence-month-label').textContent=monthLabel();
+  const bud=month.essence.budget||0;
+  document.getElementById('essence-budget-display').textContent=bud?fmt(bud):'—';
+  const items=month.essence.items;
+  const el=document.getElementById('essence-list');
+  el.innerHTML=!items.length?'<div class="empty">Aucune dépense ce mois</div>':
+    items.map(it=>`
+    <div class="list-item">
+      <div class="li-main">
+        <div class="li-label">${esc(it.label)}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:3px">
+          <span class="li-amount">${fmt(it.amount)}</span>
+          <span class="badge ${it.paid?'badge-done':'badge-pending'}">${it.paid?'Prélevé':'À venir'}</span>
+        </div>
+      </div>
+      <div class="li-right">
+        ${toggleHtml(it.paid,`toggleEssence(${it.id})`)}
+        <button class="li-del" onclick="deleteEssence(${it.id})">×</button>
+      </div>
+    </div>`).join('');
+  const total=sumArr(items);
+  document.getElementById('essence-total').textContent=fmtS(total);
+  document.getElementById('essence-preleve').textContent=fmtS(sumPaid(items));
+  document.getElementById('essence-avenir').textContent=fmtS(sumPending(items));
+  progressBar('essence-prog',total,bud);
+  document.getElementById('essence-prog-dep').textContent=fmtS(total);
+  document.getElementById('essence-prog-bud').textContent='/ '+(bud?fmt(bud):'—');
+}
+
+// ── IMPRÉVUS ──
+function addImprev(){
+  const label=document.getElementById('imp-label').value.trim();
+  const amount=parseFloat(document.getElementById('imp-amount').value);
+  if(!label||isNaN(amount)||amount<=0)return;
+  const {data,month,key}=getMonth(currentYear,currentMonth);
+  month.imprevus.push({id:Date.now(),label,amount,paid:false});
+  saveMonth(data,key,month);
+  document.getElementById('imp-label').value='';
+  document.getElementById('imp-amount').value=''; renderAll();
+}
+function toggleImprev(id){
+  const {data,month,key}=getMonth(currentYear,currentMonth);
+  const it=month.imprevus.find(x=>x.id===id); if(it)it.paid=!it.paid;
+  saveMonth(data,key,month);renderAll();
+}
+function deleteImprev(id){
+  const {data,month,key}=getMonth(currentYear,currentMonth);
+  month.imprevus=month.imprevus.filter(x=>x.id!==id);
+  saveMonth(data,key,month);renderAll();
+}
+function renderImprevus(){
+  const {month}=getMonth(currentYear,currentMonth);
+  document.getElementById('imp-month-label').textContent=monthLabel();
+  const items=month.imprevus;
+  const el=document.getElementById('imp-list');
+  el.innerHTML=!items.length?'<div class="empty">Aucun imprévu ce mois</div>':
+    items.map(it=>`
+    <div class="list-item">
+      <div class="li-main">
+        <div class="li-label">${esc(it.label)}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:3px">
+          <span class="li-amount">${fmt(it.amount)}</span>
+          <span class="badge ${it.paid?'badge-done':'badge-pending'}">${it.paid?'Prélevé':'À venir'}</span>
+        </div>
+      </div>
+      <div class="li-right">
+        ${toggleHtml(it.paid,`toggleImprev(${it.id})`)}
+        <button class="li-del" onclick="deleteImprev(${it.id})">×</button>
+      </div>
+    </div>`).join('');
+  document.getElementById('imp-total').textContent=fmtS(sumArr(items));
+  document.getElementById('imp-preleve').textContent=fmtS(sumPaid(items));
+  document.getElementById('imp-avenir').textContent=fmtS(sumPending(items));
+}
+
+// ── RÉCAP ──
+function renderRecap(){
+  const {month}=getMonth(currentYear,currentMonth);
+  document.getElementById('recap-title').textContent=monthLabel();
+
+  const tRev=sumArr(month.revenus);
+  const tFix=sumArr(month.fixes);
+  const tCou=sumArr(month.courses.items);
+  const tEss=sumArr(month.essence.items);
+  const tImp=sumArr(month.imprevus);
+  const budC=month.courses.budget||0, budE=month.essence.budget||0;
+  const tDep=tFix+tCou+tEss+tImp;
+  const epargne=tRev-tDep;
+  const allDep=[...month.fixes,...month.courses.items,...month.essence.items,...month.imprevus];
+
+  document.getElementById('recap-revenus').textContent=fmtS(tRev);
+  document.getElementById('recap-fixes').textContent=fmtS(tFix);
+  document.getElementById('recap-fixes-sub').textContent=`✅ ${fmtS(sumPaid(month.fixes))}  ⏳ ${fmtS(sumPending(month.fixes))}`;
+  document.getElementById('recap-courses').textContent=fmtS(tCou);
+  document.getElementById('recap-essence').textContent=fmtS(tEss);
+  document.getElementById('recap-imprevus').textContent=fmtS(tImp);
+  document.getElementById('recap-imprevus-sub').textContent=`✅ ${fmtS(sumPaid(month.imprevus))}  ⏳ ${fmtS(sumPending(month.imprevus))}`;
+
+  document.getElementById('recap-total-dep').textContent=fmtS(tDep);
+  document.getElementById('recap-preleve').textContent=fmtS(sumPaid(allDep));
+  document.getElementById('recap-avenir').textContent=fmtS(sumPending(allDep));
+
+  const epEl=document.getElementById('recap-epargne');
+  epEl.textContent=fmt(Math.abs(epargne));
+  epEl.style.color=epargne>=0?'#fff':'#ff6b6b';
+  document.getElementById('recap-epargne-sub').textContent=epargne>=0
+    ?`Tu peux épargner ${fmt(epargne)} ce mois 🎉`
+    :`Déficit de ${fmt(Math.abs(epargne))} ⚠️`;
+
+  progressBar('recap-courses-bar',tCou,budC);
+  document.getElementById('recap-courses-dep').textContent=fmtS(tCou);
+  document.getElementById('recap-courses-bud').textContent='/ '+(budC?fmt(budC):'—');
+  progressBar('recap-essence-bar',tEss,budE);
+  document.getElementById('recap-essence-dep').textContent=fmtS(tEss);
+  document.getElementById('recap-essence-bud').textContent='/ '+(budE?fmt(budE):'—');
+}
+
+function renderAll(){renderRevenus();renderFixes();renderCourses();renderEssence();renderImprevus();renderRecap();}
+
+function showBanner(){
+  const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isSafari=/safari/i.test(navigator.userAgent)&&!/crios|fxios/i.test(navigator.userAgent);
+  if(isIOS&&isSafari&&!window.navigator.standalone&&!localStorage.getItem('banner-closed'))
+    document.getElementById('install-banner').classList.add('visible');
+}
+function closeBanner(){
+  document.getElementById('install-banner').classList.remove('visible');
+  localStorage.setItem('banner-closed','1');
+}
+
+renderAll();
+setTimeout(showBanner,2000);
+</script>
+</body>
+</html>
