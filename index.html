@@ -775,7 +775,7 @@ function renderRecap(){
   const tEss=sumArr(month.essence.items);
   const tImp=sumArr(month.imprevus);
   const budC=month.courses.budget||0, budE=month.essence.budget||0;
-  const tDep=tFix+tCou+tEss+tImp;
+  const tDep=tFix+(budC||tCou)+(budE||tEss)+tImp;
   const epargne=tRev-tDep;
   const allDep=[...month.fixes,...month.courses.items,...month.essence.items,...month.imprevus];
 
